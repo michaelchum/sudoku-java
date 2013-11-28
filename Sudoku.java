@@ -23,10 +23,20 @@ class Sudoku
         // Save the time in order to calculate runtime
         long startTime = System.nanoTime();
         
+        for (int i = 0; i < N ; i++){
+            for (int j = 0; j < N; j++){
 
+            }
+        }
         
         // Print out the running time of this solve() method
         System.out.println("Runtime: " + (System.nanoTime() - startTime));
+    }
+
+    // Calls solve for the next cell
+    public void solveNext()
+    {
+
     }
 
 
