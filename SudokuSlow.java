@@ -75,7 +75,6 @@ class Sudoku
     public void solve(){
         // Save the time in order to calculate runtime
         long startTime = System.nanoTime();
-        
         try{find(0,0);} 
         catch(Exception e){}
 
