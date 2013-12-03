@@ -9,75 +9,263 @@ class Sudoku
 {
     /* SIZE is the size parameter of the Sudoku puzzle, and N is the square of the size.  For 
      * a standard Sudoku puzzle, SIZE is 3 and N is 9. */
-    int SIZE, N;
+    static int SIZE, N; // Making these variables static gives runs about 3ms faster in veryHard5x5.txt
 
     /* The grid contains all the numbers in the Sudoku puzzle.  Numbers which have
      * not yet been revealed are stored as 0. */
     int Grid[][];
 
-    public boolean checkRow(int row, int number){
-        for(int col=0; col < N; col++){
-            if (Grid[row][col]==number) return false;
-        }
-        return true;
-    }
+	boolean[][] gridCellSolved;
+	int numberCellSolved = 0;
+	Random generator;
 
-    public boolean checkCol(int col, int number){
-        for(int row=0; row < N; row++){
-            if (Grid[row][col]==number) return false;
-        }
-        return true;
-    }
+	Domain[][] domains;
 
-    public boolean checkSquare(int row, int col, int number){
-        int rowSection = row/SIZE * SIZE;
-        int colSection = col/SIZE * SIZE;
-        for (int i = rowSection; i < (rowSection+SIZE); i++){
-            for (int j = colSection; j < (colSection+SIZE); j++){
-                if(Grid[i][j]==number) return false;
-            }
-        }
-        return true;
-    }
+	// Check if a value k is valid in the cell (row, col) returns true if valid
+	boolean checkValid(int row, int col, int k){
+		// Check if k is present in the column
+		for (int c=0; c<N; c++)
+			if (Grid[row][c] == k) return false;
+		// Check if k is present in the row
+		for (int r=0; r<N; r++)
+			if (Grid[r][col] == k) return false;
+		// Check if k is present in the box
+		int rBox = row/SIZE;
+		int cBox = col/SIZE;
+		for (int r=SIZE*rBox; r < SIZE*rBox+SIZE; r++)
+		for (int c=SIZE*cBox; c < SIZE*cBox+SIZE; c++)
+		if (Grid[r][c] == k) return false;
+		return true;
+	}
 
-    // Find a valid number for the current cell
-    public void find(int row, int col)throws Exception{
+	// A domain object contains all the possible valid values for a cell
+	private class Domain {
+		public int[] ass = new int[N];
+		public int nass = 0;
+	}
 
-        // If row number exceeds the max row, the grid is solved
+	// Get all the possible values for a cell and insert in domain
+	private Domain getDomain(int r, int c) {
+		Domain d = new Domain();
+		for (int k=1; k<=N; k++)
+			if (checkValid(r,c,k)) {
+				d.ass[d.nass] = k;
+				d.nass++;
+			}
+		return d;
+  	}
+
+	private boolean SmartSolve(){
+
+		// A grid containing the domains of every cell
+		domains = new Domain[N][N];
+
+		// Find the domain of each cell and insert into domains grid
+		for (int r=0; r<N; r++)
+			for (int c=0; c<N; c++) { 
+				domains[r][c] = new Domain();
+				// Fill domain with the only possible value if cell initially solved
+				if (Grid[r][c]>0) {
+					domains[r][c].nass = 1;
+					domains[r][c].ass[0]=Grid[r][c];
+				}
+				// Get domain if cell empty
+				else {
+					domains[r][c] = getDomain(r,c);
+				}
+			}
+
+		// For all domains with a single possible value, fill the Grid with the value and assign true in gridCellSolved
+		for (int r=0; r<N; r++)
+			for (int c=0; c<N; c++)
+				if (Grid[r][c]==0 && domains[r][c].nass==1) {
+					Grid[r][c]=domains[r][c].ass[0];
+					gridCellSolved[r][c]=true;
+					return true;
+				}         
+
+		int count;
+
+		// Scan the domains of every cell in row and find a unique valid number for the same row
+		for (int k=1; k<=N; k++)
+			for (int r=0; r<N; r++) {
+				count=0;
+				int col=0;
+				for (int c=0; c<N; c++)
+					// Scan through every possible number in the domain
+					for (int i=0; i<domains[r][c].nass; i++)
+						if (domains[r][c].ass[i]==k) {
+							col=c; 
+							count++;
+						}
+				// If valid number is unique in the column and grid is empty at this cell
+				if (count==1 && Grid[r][col]==0) {
+					Grid[r][col]=k;
+					gridCellSolved[r][col]=true;
+					return true;
+				}
+	  		}
+
+		// Scan the domains of every cell in column and find a unique valid number for the same column
+		for (int k=1; k<=N; k++)
+			for (int c=0; c<N; c++) {
+				count=0;
+				int row=0;
+				for (int r=0; r<N; r++)
+					// Scan through every possible number in the domain
+					for (int i=0; i<domains[r][c].nass; i++)
+						if (domains[r][c].ass[i]==k) {
+							row=r; 
+							count++;
+						}
+				// If valid number is unique in the row and grid is empty at this cell
+				if (count==1 && Grid[row][c]==0) {
+					Grid[row][c]=k;
+					gridCellSolved[row][c]=true;
+					return true;
+				}
+			}
+
+		// Scan the domains of every cell in a box and find a unique valid number for the same box
+		for (int k=1; k<=N; k++)
+			for (int b1=0; b1<SIZE; b1++)
+  				for (int b2=0; b2<SIZE; b2++) {
+					count=0;
+					int row=0;
+					int col=0;
+					for (int r=b1*SIZE; r<b1*SIZE+SIZE; r++)
+						for (int c=b2*SIZE; c<b2*SIZE+SIZE; c++) 
+							for (int i=0; i<domains[r][c].nass; i++)
+								if (domains[r][c].ass[i]==k) {
+									col=c; 
+									row=r; 
+									count++;
+								}
+		  			if (count==1 && Grid[row][col]==0) {
+						Grid[row][col]=k;
+						gridCellSolved[row][col]=true;
+						return true;
+		  			}
+	      		}
+		return false;
+	}
+
+	int assigned;
+    
+	public boolean solveSudoku() {
+		generator = new Random();
+
+		gridCellSolved = new boolean[N][N];
+
+		// Fill up the gridCellSolved matrix
+		for (int r=0; r<N; r++)
+			for (int c=0; c<N; c++){
+				if (Grid[r][c] > 0) {
+					gridCellSolved[r][c] = true;
+					numberCellSolved++;
+				}
+				else gridCellSolved[r][c] = false;
+      		}
+    
+		assigned = numberCellSolved;
+		
+		// Solve the matrix intuitively using smart solve algorithm
+		while (SmartSolve()) {
+			assigned++;
+			numberCellSolved++;
+		};
+
+		// Use simple backtrack algorithm to solve 3x3 matrix as it seems to be faster than random guesses
+		if (SIZE==3){
+			try {backtrack(0,0);}catch(Exception e){}
+		}
+		else{
+			randomGuess();
+		}
+    	return true;
+	}
+
+
+	public void randomGuess(){
+		int row=0, col=0;
+		// Solve the rest of the grid with random guess and backtrack if wrong
+		while (assigned < N*N) {	    
+			Domain current = null;
+			Domain best = new Domain();
+			best.nass = N+1;
+		  
+			// Find the cell with the smallest domain size 
+			for (int r=0; r<N; r++)
+				for (int c=0; c<N; c++)
+					if (Grid[r][c]==0) {
+					    current = getDomain(r,c);
+					    // Check if current domain is smallest, copy it to the best domain variable
+					    if (current.nass < best.nass) {
+							best.nass = current.nass;
+							for (int i=0; i<best.nass; i++)
+							    best.ass[i] = current.ass[i];
+							row = r; col = c;
+					    }
+					}
+
+			// Backtrack
+			if (best.nass==0) {
+			    for (int r=0; r<N; r++)
+					for (int c=0; c<N; c++)
+					    if (!gridCellSolved[r][c] && Grid[r][c]>0) {
+							double pr = 0.1;
+							if (generator.nextFloat() < pr) {
+							    assigned--;
+							    Grid[r][c] = 0;
+							}
+					    }
+			}
+			// Assign random value from domain
+			else {
+				int i = generator.nextInt(best.nass);
+			    Grid[row][col] = best.ass[i];
+			    assigned++;
+			}
+		}
+	}
+
+	public void backtrack(int row, int col)throws Exception{
+
+		// If row number exceeds the max row, the grid is solved
         if (row > N-1)throw new Exception( "Success!" ) ;
 
-        // If cell is not 0 (or x), continue with the next cell
-        if (Grid[row][col]!=0)findNext(row, col);
-        else {
-            // Guess a valid number for current cell
-            for ( int number = 1; number <= N; number++){
-                if ( checkRow(row, number) && checkCol(col, number) && checkSquare(row, col, number) ){
-                    Grid[row][col] = number;
-                    // Continue with next cell
-                    findNext(row, col);
-                }
-            }
-            Grid[row][col]=0;
-        }
-    }
+	    // If cell is not 0 (or x), continue with the next cell
+	    if (Grid[row][col]!=0)backtrackNext(row, col);
+	    else {
+	        // Guess a valid number for current cell
+	        for ( int number = 1; number <= N; number++){
+	            if (checkValid(row,col,number)){
+	                Grid[row][col] = number;
+	                assigned++;
+	                // Continue with next cell
+	                backtrackNext(row, col);
+	            }
+	        }
+	        Grid[row][col]=0;
+	    }
+	}
 
-    // Calls find for the next cell
-    public void findNext(int row, int col)throws Exception{
-        if (col < (N-1)){
-            find(row, col+1);
-        } else {
-            find(row+1, 0);
-        }
-    }
+	// Calls find for the next cell
+	public void backtrackNext(int row, int col)throws Exception{
+		if(assigned==N*N) return;
+	    if (col < (N-1)){
+	        backtrack(row, col+1);
+	    } else {
+	        backtrack(row+1, 0);
+	    }
+	}
 
     /* The solve() method should remove all the unknown characters ('x') in the Grid
      * and replace them with the numbers from 1-9 that satisfy the Sudoku puzzle. */
     public void solve(){
         // Save the time in order to calculate runtime
         long startTime = System.nanoTime();
-        try{find(0,0);} 
-        catch(Exception e){}
-
+        solveSudoku();
         // Print out the running time in MILLISECONDS of this solve() method
         System.out.println("Runtime: " + (System.nanoTime() - startTime)/1e6);
     }
