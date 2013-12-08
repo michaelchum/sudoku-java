@@ -1,5 +1,5 @@
-//Michael Ho
-//260532097
+// STUDENT_NAME: Michael Ho
+// STUDENT_ID: 260532097
 
 import java.util.*;
 import java.io.*;

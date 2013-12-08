@@ -1,5 +1,5 @@
-//Michael Ho
-//260532097
+// STUDENT_NAME: Michael Ho
+// STUDENT_ID: 260532097
 
 import java.util.*;
 import java.io.*;
@@ -15,10 +15,16 @@ class Sudoku
      * not yet been revealed are stored as 0. */
     int Grid[][];
 
+    // Grid of the same size as Grid, true if cell is solved, false if cell is not solved
 	boolean[][] gridCellSolved;
+
+	// Track the number of cells solved
 	int numberCellSolved = 0;
+
+	// Used for Random Guess algorithm
 	Random generator;
 
+	// Grid of the same size as Grid, constains domains of all the possible valid numbers for each cell
 	Domain[][] domains;
 
 	// Check if a value k is valid in the cell (row, col) returns true if valid
@@ -41,7 +47,7 @@ class Sudoku
 	// A domain object contains all the possible valid values for a cell
 	private class Domain {
 		public int[] ass = new int[N];
-		public int nass = 0;
+		public int numberAss = 0;
 	}
 
 	// Get all the possible values for a cell and insert in domain
@@ -49,12 +55,19 @@ class Sudoku
 		Domain d = new Domain();
 		for (int k=1; k<=N; k++)
 			if (checkValid(r,c,k)) {
-				d.ass[d.nass] = k;
-				d.nass++;
+				d.ass[d.numberAss] = k;
+				d.numberAss++;
 			}
 		return d;
   	}
 
+  	// Smart algorithm to systematically solve the grid according to domain availability and unique possibility
+  	// It uses a set of rules in order
+  	// 1. Find the domain of each cell
+  	// 2. Find all domains with a single value and insert in grid
+  	// 3. Scan domains of each row and find unique valid numbers for each row and insert in grid
+  	// 4. Scan domains of each column and find unique valid numbers for reach column and insert in grid
+  	// 5. Scan domains of each box and find unique valid numbers for each box and insert in grid
 	private boolean SmartSolve(){
 
 		// A grid containing the domains of every cell
@@ -66,7 +79,7 @@ class Sudoku
 				domains[r][c] = new Domain();
 				// Fill domain with the only possible value if cell initially solved
 				if (Grid[r][c]>0) {
-					domains[r][c].nass = 1;
+					domains[r][c].numberAss = 1;
 					domains[r][c].ass[0]=Grid[r][c];
 				}
 				// Get domain if cell empty
@@ -78,7 +91,7 @@ class Sudoku
 		// For all domains with a single possible value, fill the Grid with the value and assign true in gridCellSolved
 		for (int r=0; r<N; r++)
 			for (int c=0; c<N; c++)
-				if (Grid[r][c]==0 && domains[r][c].nass==1) {
+				if (Grid[r][c]==0 && domains[r][c].numberAss==1) {
 					Grid[r][c]=domains[r][c].ass[0];
 					gridCellSolved[r][c]=true;
 					return true;
@@ -93,7 +106,7 @@ class Sudoku
 				int col=0;
 				for (int c=0; c<N; c++)
 					// Scan through every possible number in the domain
-					for (int i=0; i<domains[r][c].nass; i++)
+					for (int i=0; i<domains[r][c].numberAss; i++)
 						if (domains[r][c].ass[i]==k) {
 							col=c; 
 							count++;
@@ -109,11 +122,11 @@ class Sudoku
 		// Scan the domains of every cell in column and find a unique valid number for the same column
 		for (int k=1; k<=N; k++)
 			for (int c=0; c<N; c++) {
-				count=0;
 				int row=0;
+				count=0;
 				for (int r=0; r<N; r++)
 					// Scan through every possible number in the domain
-					for (int i=0; i<domains[r][c].nass; i++)
+					for (int i=0; i<domains[r][c].numberAss; i++)
 						if (domains[r][c].ass[i]==k) {
 							row=r; 
 							count++;
@@ -130,12 +143,12 @@ class Sudoku
 		for (int k=1; k<=N; k++)
 			for (int b1=0; b1<SIZE; b1++)
   				for (int b2=0; b2<SIZE; b2++) {
-					count=0;
-					int row=0;
 					int col=0;
+					int row=0;
+					count=0;
 					for (int r=b1*SIZE; r<b1*SIZE+SIZE; r++)
 						for (int c=b2*SIZE; c<b2*SIZE+SIZE; c++) 
-							for (int i=0; i<domains[r][c].nass; i++)
+							for (int i=0; i<domains[r][c].numberAss; i++)
 								if (domains[r][c].ass[i]==k) {
 									col=c; 
 									row=r; 
@@ -150,85 +163,10 @@ class Sudoku
 		return false;
 	}
 
-	int assigned;
-    
-	public boolean solveSudoku() {
-		generator = new Random();
-
-		gridCellSolved = new boolean[N][N];
-
-		// Fill up the gridCellSolved matrix
-		for (int r=0; r<N; r++)
-			for (int c=0; c<N; c++){
-				if (Grid[r][c] > 0) {
-					gridCellSolved[r][c] = true;
-					numberCellSolved++;
-				}
-				else gridCellSolved[r][c] = false;
-      		}
-    
-		assigned = numberCellSolved;
-		
-		// Solve the matrix intuitively using smart solve algorithm
-		while (SmartSolve()) {
-			assigned++;
-			numberCellSolved++;
-		};
-
-		// Use simple backtrack algorithm to solve 3x3 matrix as it seems to be faster than random guesses
-		if (SIZE==3){
-			try {backtrack(0,0);}catch(Exception e){}
-		}
-		else{
-			randomGuess();
-		}
-    	return true;
-	}
-
-
-	public void randomGuess(){
-		int row=0, col=0;
-		// Solve the rest of the grid with random guess and backtrack if wrong
-		while (assigned < N*N) {	    
-			Domain current = null;
-			Domain best = new Domain();
-			best.nass = N+1;
-		  
-			// Find the cell with the smallest domain size 
-			for (int r=0; r<N; r++)
-				for (int c=0; c<N; c++)
-					if (Grid[r][c]==0) {
-					    current = getDomain(r,c);
-					    // Check if current domain is smallest, copy it to the best domain variable
-					    if (current.nass < best.nass) {
-							best.nass = current.nass;
-							for (int i=0; i<best.nass; i++)
-							    best.ass[i] = current.ass[i];
-							row = r; col = c;
-					    }
-					}
-
-			// Backtrack
-			if (best.nass==0) {
-			    for (int r=0; r<N; r++)
-					for (int c=0; c<N; c++)
-					    if (!gridCellSolved[r][c] && Grid[r][c]>0) {
-							double pr = 0.1;
-							if (generator.nextFloat() < pr) {
-							    assigned--;
-							    Grid[r][c] = 0;
-							}
-					    }
-			}
-			// Assign random value from domain
-			else {
-				int i = generator.nextInt(best.nass);
-			    Grid[row][col] = best.ass[i];
-			    assigned++;
-			}
-		}
-	}
-
+	// Simple backtrack algorithm to systematically solve the grid row by row with recursion
+	// 1. Find a valid number for a cell and insert it
+	// 2. Find a valid number for next cell, if non-existent, backtrack and try another valid number for previous cell
+	// 3. Do steps 1 and 2 recursively until entire grid is solved
 	public void backtrack(int row, int col)throws Exception{
 
 		// If row number exceeds the max row, the grid is solved
@@ -241,7 +179,7 @@ class Sudoku
 	        for ( int number = 1; number <= N; number++){
 	            if (checkValid(row,col,number)){
 	                Grid[row][col] = number;
-	                assigned++;
+	                numberCellSolved++;
 	                // Continue with next cell
 	                backtrackNext(row, col);
 	            }
@@ -250,14 +188,95 @@ class Sudoku
 	    }
 	}
 
-	// Calls find for the next cell
+	// Calls backtrack for the next cell
 	public void backtrackNext(int row, int col)throws Exception{
-		if(assigned==N*N) return;
+		if(numberCellSolved==N*N) return;
 	    if (col < (N-1)){
 	        backtrack(row, col+1);
 	    } else {
 	        backtrack(row+1, 0);
 	    }
+	}
+
+	// Random guess algorithm for large grids
+	// 1. Update all domains
+	// 2. Find cell with the smallest domain
+	// 3. Insert a random number from the corresponding domain to cell
+	// 4. If a random assignment caused an 
+	public void randomGuess(){
+		int row=0, col=0;
+		// Solve the rest of the grid with random guess and backtrack if wrong
+		while (numberCellSolved < N*N) {	    
+			Domain current = null;
+			Domain best = new Domain();
+			best.numberAss = N+1;
+		  
+			// Find the cell with the smallest domain size 
+			for (int r=0; r<N; r++)
+				for (int c=0; c<N; c++)
+					if (Grid[r][c]==0) {
+					    current = getDomain(r,c);
+					    // Check if current domain is smallest, copy it to the best domain variable
+					    if (current.numberAss < best.numberAss) {
+							best.numberAss = current.numberAss;
+							for (int i=0; i<best.numberAss; i++)
+							    best.ass[i] = current.ass[i];
+							row = r; col = c;
+					    }
+					}
+
+			// Random backtrack if smallest domain is zero, thus a wrong value has been previously assigned, unassign a random value and backtrack
+			if (best.numberAss==0) {
+			    for (int r=0; r<N; r++)
+					for (int c=0; c<N; c++)
+					    if (!gridCellSolved[r][c] && Grid[r][c]>0) {
+					    	// At this point, I feel that using a random probability for unassignment yields a faster algorithm than systematical unassignment (deduction by testing)
+							double probability = 0.1;
+							if (generator.nextFloat() < probability) {
+							    numberCellSolved--;
+							    Grid[r][c] = 0;
+							}
+					    }
+			}
+			// Assign random value from domain
+			// Again random assignment from the domain feels faster that systematical assignment (deduction from testing)
+			else {
+				int i = generator.nextInt(best.numberAss);
+			    Grid[row][col] = best.ass[i];
+			    numberCellSolved++;
+			}
+		}
+	}
+    
+    // Apply the 3 algorithms above to solve the grid
+	public boolean solveSudoku() {
+		generator = new Random();
+		gridCellSolved = new boolean[N][N];
+
+		// Fill up the gridCellSolved matrix
+		for (int r=0; r<N; r++)
+			for (int c=0; c<N; c++){
+				if (Grid[r][c] > 0) {
+					gridCellSolved[r][c] = true;
+					numberCellSolved++;
+				}
+				else gridCellSolved[r][c] = false;
+      		}
+		
+		// 1. Fill the grid intuitively using smart solve algorithm
+		while (SmartSolve()) {
+			numberCellSolved++;
+		};
+
+		// 2. Use simple backtrack algorithm to solve 3x3 bigger as it seems to be faster than random guesses
+		if (SIZE==3){
+			try {backtrack(0,0);}catch(Exception e){}
+		}
+		// 2. Or use random guesses to solve bigger grids
+		else{
+			randomGuess();
+		}
+    	return true;
 	}
 
     /* The solve() method should remove all the unknown characters ('x') in the Grid
