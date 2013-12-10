@@ -11,9 +11,10 @@ Speed improvements to come
 
 Input format of the sudoku grid is as follows in .txt file
 
-``
-3
+Empty cells can be `x` or `0` and don't forget to put the size of the grid on top
 
+```
+3
 x x x | x x x | x x x
 x 1 x | 6 2 x | x 9 x
 x x 2 | x x 9 | 3 1 x
@@ -25,12 +26,11 @@ x 3 x | 8 x x | 5 x x
 x 6 9 | 1 x x | 4 x x
 x 8 x | x 7 3 | x 5 x
 x x x | x x x | x x x
-
+```
 (Evil puzzle from www.websudoku.com)
-``
-``
-5
 
+```
+5
  1  4 23  x 12 |  3  x  x 14 11 |  x 17 25  x 22 |  x 16  9 13 20 |  x  x  x  x 24 
 10  x  x  3  x |  9  x 15  2  x | 21  x 11  x  5 |  x  8  1 25  x |  x  7  x  x 14 
  x 11 22  8  x |  x 19  x 12 17 | 13  x  2  x  x | 23 14  3  x  x |  x  x  x  x  5 
@@ -60,6 +60,6 @@ x x x | x x x | x x x
 18  x  x  x  x |  x  x  8 19 10 |  x  x  6  x  7 | 15 17  x  1  x |  x  2 14 20  x 
 13  x  x  1  x |  x  4 18 15  x |  5  x 24  x 17 |  x 23 19  x 14 |  x  6  x  x  3 
 22  x  x  x  x | 23 12 24 17  x | 16  x 14 10  x |  6 25  x  x 21 |  4  x  9 15  1 
-
+```
 (5x5 Sudoku puzzle from www.menneske.no/sudoku/5/eng/)
-``
+
