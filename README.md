@@ -1,9 +1,9 @@
 java-sudoku
 ===========
 
-A sudoku solver for 3x3, 4x4 and 5x5 boards aimed for speed
+A sudoku solver for 3x3, 4x4 and 5x5 boards aimed for speed, uses backtracking method with heuristics
 
-Can solve 3x3 grids in under 30ms
+Can solve the hardest 3x3 grids in under 30ms
 
 4x4 and 5x5 grids between 150ms to 40s depending on difficulty (empty slots and positioning)
 
