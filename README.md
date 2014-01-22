@@ -1,13 +1,11 @@
 java-sudoku
 ===========
 
-A sudoku solver for 3x3, 4x4 and 5x5 boards aimed for speed, uses backtracking method with heuristics
+A sudoku solver for 3x3, 4x4 and 5x5 boards aimed for speed using the backtracking method with heuristics
 
 Can solve the hardest 3x3 grids in under 30ms
 
 4x4 and 5x5 grids between 150ms to 40s depending on difficulty (empty slots and positioning)
-
-Speed improvements to come
 
 Input format of the sudoku grid is as follows in .txt file
 
@@ -62,4 +60,6 @@ x x x | x x x | x x x
 22  x  x  x  x | 23 12 24 17  x | 16  x 14 10  x |  6 25  x  x 21 |  4  x  9 15  1 
 ```
 (5x5 Sudoku puzzle from www.menneske.no/sudoku/5/eng/)
+
+Speed improvements to come
 
